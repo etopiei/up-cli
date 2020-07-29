@@ -2,11 +2,11 @@ extern crate colored;
 
 mod up;
 
-use std::env;
-use std::io::{Write, stdout, stdin};
 use colored::*;
+use std::env;
+use std::io::{stdin, stdout, Write};
 
-use up::{PingResponse, AccountResponse, TransactionResponse, UP_API_BASE};
+use up::{AccountResponse, PingResponse, TransactionResponse, UP_API_BASE};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,33 +36,59 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
         stdout().flush()?;
         // Step 2: Read
         let mut command = String::new();
-        stdin().read_line(&mut command).expect("Failed to read command");
+        stdin()
+            .read_line(&mut command)
+            .expect("Failed to read command");
         // Step 3: Evaluate
         if command.trim() == "exit" || command.trim() == "quit" {
             break;
         } else if command.trim() == "balance" || command.trim() == "accounts" {
             // Call Up API to retreive all account balances
             let client = reqwest::Client::new();
-            let resp: AccountResponse = client.request(reqwest::Method::GET, &format!("{}/accounts", UP_API_BASE))
+            let resp: AccountResponse = client
+                .request(reqwest::Method::GET, &format!("{}/accounts", UP_API_BASE))
                 .header(reqwest::header::AUTHORIZATION, api_key)
-                .send().await?
-                .json().await?;
+                .send()
+                .await?
+                .json()
+                .await?;
             // Now loop over accounts
             for acc in resp.data {
-                println!("{}: ${}", acc.attributes.display_name, acc.attributes.balance.value);
+                println!(
+                    "{}: ${}",
+                    acc.attributes.display_name, acc.attributes.balance.value
+                );
             }
         } else if command.trim() == "transactions" {
             // Call Up API to get last 10 transactions
             let client = reqwest::Client::new();
-            let resp: TransactionResponse = client.request(reqwest::Method::GET, &format!("{}/transactions?page[size]=10", UP_API_BASE))
+            let resp: TransactionResponse = client
+                .request(
+                    reqwest::Method::GET,
+                    &format!("{}/transactions?page[size]=10", UP_API_BASE),
+                )
                 .header(reqwest::header::AUTHORIZATION, api_key)
-                .send().await?
-                .json().await?;
+                .send()
+                .await?
+                .json()
+                .await?;
             // Now print all transactions
             for transaction in resp.data {
-                let verb = if transaction.attributes.amount.value_in_base_units < 0 { "to" } else { "from" };
-                let coloured_transaction = if transaction.attributes.amount.value_in_base_units < 0 { transaction.attributes.amount.value.red() } else { transaction.attributes.amount.value.green() };
-                println!("{} {} {}", coloured_transaction, verb, transaction.attributes.description);
+                let verb = if transaction.attributes.amount.value_in_base_units < 0 {
+                    "to"
+                } else {
+                    "from"
+                };
+                let coloured_transaction = if transaction.attributes.amount.value_in_base_units < 0
+                {
+                    transaction.attributes.amount.value.red()
+                } else {
+                    transaction.attributes.amount.value.green()
+                };
+                println!(
+                    "{} {} {}",
+                    coloured_transaction, verb, transaction.attributes.description
+                );
             }
         } else {
             print_help();
@@ -73,9 +99,11 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn print_help() {
-    println!("Up Banking CLI Help
+    println!(
+        "Up Banking CLI Help
     Commands:
      - balance (prints all account balances)
      - transactions (show last 10 transactions)
-     - exit (quits the app)");
+     - exit (quits the app)"
+    );
 }
