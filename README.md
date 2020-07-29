@@ -1,5 +1,8 @@
 # Up Banking CLI
 
+![License Badge](https://img.shields.io/github/license/etopiei/up-cli)
+![crates.io Badge](https://img.shields.io/crates/v/up-cli)
+
 This is a simple command line program to interact with the Up Banking API.
 
 ## Installation
