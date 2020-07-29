@@ -4,6 +4,7 @@ pub static UP_API_BASE: &str = "https://api.up.com.au/api/v1";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct PingMetaData {
     id: String,
     pub status_emoji: String,
@@ -16,6 +17,7 @@ pub struct PingResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct AccountBalance {
     currency_code: String,
     pub value: String,
@@ -23,6 +25,7 @@ pub struct AccountBalance {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct AccountAttributes {
     pub display_name: String,
     account_type: String,
@@ -30,6 +33,7 @@ pub struct AccountAttributes {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct AccountData {
     id: String,
     r#type: String,
@@ -43,6 +47,7 @@ pub struct AccountResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct TransactionAmount {
     currency_code: String,
     pub value: String,
@@ -57,6 +62,7 @@ pub struct TransactionAttributes {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct TransactionData {
     id: String,
     r#type: String,
