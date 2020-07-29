@@ -39,10 +39,13 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
         stdin()
             .read_line(&mut command)
             .expect("Failed to read command");
+        let args: Vec<&str> = command.trim().split_whitespace().collect();
         // Step 3: Evaluate
-        if command.trim() == "exit" || command.trim() == "quit" {
+        if args.len() == 0 {
+            print_help();
+        } else if args[0] == "exit" || args[0] == "quit" {
             break;
-        } else if command.trim() == "balance" || command.trim() == "accounts" {
+        } else if args[0] == "balance" || args[0] == "accounts" {
             // Call Up API to retreive all account balances
             let client = reqwest::Client::new();
             let resp: AccountResponse = client
@@ -59,13 +62,17 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
                     acc.attributes.display_name, acc.attributes.balance.value
                 );
             }
-        } else if command.trim() == "transactions" {
+        } else if args[0] == "transactions" {
+            let mut size: u8 = 10;
+            if args.len() >= 2 {
+                size = args[1].parse::<u8>().unwrap();
+            }
             // Call Up API to get last 10 transactions
             let client = reqwest::Client::new();
             let resp: TransactionResponse = client
                 .request(
                     reqwest::Method::GET,
-                    &format!("{}/transactions?page[size]=10", UP_API_BASE),
+                    &format!("{}/transactions?page[size]={}", UP_API_BASE, size),
                 )
                 .header(reqwest::header::AUTHORIZATION, api_key)
                 .send()
@@ -102,8 +109,8 @@ fn print_help() {
     println!(
         "Up Banking CLI Help
     Commands:
-     - balance (prints all account balances)
-     - transactions (show last 10 transactions)
-     - exit (quits the app)"
+     - balance              (prints all account balances)
+     - transactions [COUNT] (show last COUNT transactions, defaults to 10)
+     - exit                 (quits the app)"
     );
 }
