@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let client = reqwest::Client::new();
             let path = format!("{}/util/ping", UP_API_BASE);
             let req = client.request(reqwest::Method::GET, &path)
-                .header(reqwest::header::AUTHORIZATION, &val);
+                .bearer_auth(&val);
             let resp: PingResponse = req.send().await?.json().await?;
             // If the response is parsed than we have a valid token.
             if resp.meta.status_emoji.trim() == "⚡️" {
@@ -50,7 +50,7 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
             let client = reqwest::Client::new();
             let resp: AccountResponse = client
                 .request(reqwest::Method::GET, &format!("{}/accounts", UP_API_BASE))
-                .header(reqwest::header::AUTHORIZATION, api_key)
+                .bearer_auth(api_key)
                 .send()
                 .await?
                 .json()
@@ -74,7 +74,7 @@ async fn repl(api_key: &str) -> Result<(), Box<dyn std::error::Error>> {
                     reqwest::Method::GET,
                     &format!("{}/transactions?page[size]={}", UP_API_BASE, size),
                 )
-                .header(reqwest::header::AUTHORIZATION, api_key)
+                .bearer_auth(api_key)
                 .send()
                 .await?
                 .json()
