@@ -1,13 +1,17 @@
 extern crate colored;
 
+mod model;
+mod tally_income;
 mod up;
 
 use colored::*;
-use reqwest::{Client, Method, header};
+use reqwest::{header, Client, Method};
 use std::env;
 use std::io::{stdin, stdout, Write};
+use model::{PingResponse, UP_API_BASE};
+use up::*;
 
-use up::{AccountResponse, PingResponse, TransactionResponse, UP_API_BASE};
+use crate::tally_income::tally_income;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,36 +37,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-async fn get_accounts(client: &Client) -> Result<Vec<up::AccountData>, Box<dyn std::error::Error>> {
-    Ok(client
-        .request(Method::GET, &format!("{}/accounts", UP_API_BASE))
-        .send()
-        .await?
-        .json::<AccountResponse>()
-        .await?
-        .data
-    )
-}
-
-async fn get_transactions(client: &Client, size: u8) -> Result<Vec<up::TransactionData>, Box<dyn std::error::Error>> {
-    Ok(client
-        .request(Method::GET, &format!("{}/transactions?page[size]={}", UP_API_BASE, size))
-        .send()
-        .await?
-        .json::<TransactionResponse>()
-        .await?
-        .data
-    )
-}
-
-fn print_transaction(transaction: &up::TransactionData) {
+fn print_transaction(transaction: &model::TransactionData) {
     let verb = if transaction.attributes.amount.value_in_base_units < 0 {
         "to"
     } else {
         "from"
     };
-    let coloured_transaction = if transaction.attributes.amount.value_in_base_units < 0
-    {
+    let coloured_transaction = if transaction.attributes.amount.value_in_base_units < 0 {
         transaction.attributes.amount.value.red()
     } else {
         transaction.attributes.amount.value.green()
@@ -71,7 +52,6 @@ fn print_transaction(transaction: &up::TransactionData) {
         "{} {} {}",
         coloured_transaction, verb, transaction.attributes.description
     );
-
 }
 
 async fn repl(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
@@ -91,12 +71,13 @@ async fn repl(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
         match args[0] {
             "exit" | "quit" => break,
             "balance" | "accounts" => {
-                for acc in get_accounts(&client).await? { println!(
+                for acc in get_accounts(&client).await? {
+                    println!(
                         "{}: ${}",
                         acc.attributes.display_name, acc.attributes.balance.value
                     );
                 }
-            },
+            }
             "transactions" => {
                 let mut size: u8 = 10;
                 if args.len() >= 2 {
@@ -105,8 +86,15 @@ async fn repl(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
                 for transaction in get_transactions(&client, size).await? {
                     print_transaction(&transaction);
                 }
-            },
-            _ => print_help()
+            }
+            "tally_income" => {
+                let tally = tally_income(&client).await?;
+
+                for (raw_text, amount) in tally {
+                    println!("{}: ${}", raw_text, amount);
+                }
+            }
+            _ => print_help(),
         }
     }
     println!("Thanks for using Up Banking CLI - Have a nice day!");
@@ -119,6 +107,7 @@ fn print_help() {
     Commands:
      - balance              (prints all account balances)
      - transactions [COUNT] (show last COUNT transactions, defaults to 10)
+     - tally_income (counts all transactions related to income)
      - exit                 (quits the app)"
     );
 }

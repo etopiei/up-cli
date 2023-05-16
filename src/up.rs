@@ -1,75 +1,59 @@
-use serde::Deserialize;
+use crate::model::{self, AccountResponse, TransactionResponse, UP_API_BASE};
+use reqwest::{Client, Method};
+use std::error::Error;
 
-pub static UP_API_BASE: &str = "https://api.up.com.au/api/v1";
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct PingMetaData {
-    id: String,
-    pub status_emoji: String,
+pub async fn get_accounts(client: &Client) -> Result<Vec<model::AccountData>, Box<dyn Error>> {
+    Ok(client
+        .request(Method::GET, &format!("{}/accounts", UP_API_BASE))
+        .send()
+        .await?
+        .json::<AccountResponse>()
+        .await?
+        .data)
 }
 
-#[derive(Deserialize)]
-pub struct PingResponse {
-    pub meta: PingMetaData,
+pub async fn get_transactions(
+    client: &Client,
+    size: u8,
+) -> Result<Vec<model::TransactionData>, Box<dyn Error>> {
+    Ok(client
+        .request(
+            Method::GET,
+            &format!("{}/transactions?page[size]={}", UP_API_BASE, size),
+        )
+        .send()
+        .await?
+        .json::<TransactionResponse>()
+        .await?
+        .data)
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct AccountBalance {
-    currency_code: String,
-    pub value: String,
-}
+/// Get all transactions from the Up API
+pub async fn get_all_transactions(
+    client: &Client,
+) -> Result<Vec<model::TransactionData>, Box<dyn Error>> {
+    let mut request = client
+        .request(
+            Method::GET,
+            &format!("{}/transactions?page[size]={}", UP_API_BASE, 100),
+        )
+        .send()
+        .await?
+        .json::<TransactionResponse>()
+        .await?;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct AccountAttributes {
-    pub display_name: String,
-    account_type: String,
-    pub balance: AccountBalance,
-}
+    let mut request_data = request.data;
 
-#[derive(Deserialize)]
-#[allow(dead_code)]
-pub struct AccountData {
-    id: String,
-    r#type: String,
-    pub attributes: AccountAttributes,
-}
+    while let Some(url) = request.links.next {
+        request = client
+            .request(Method::GET, url)
+            .send()
+            .await?
+            .json::<TransactionResponse>()
+            .await?;
 
-#[derive(Deserialize)]
-pub struct AccountResponse {
-    pub data: Vec<AccountData>, // links: AccountLinks
-}
+        request_data.append(&mut request.data);
+    }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct TransactionAmount {
-    currency_code: String,
-    pub value: String,
-    pub value_in_base_units: i32,
-}
-
-#[derive(Deserialize)]
-pub struct TransactionAttributes {
-    pub amount: TransactionAmount,
-    pub description: String,
-    pub message: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[allow(dead_code)]
-pub struct TransactionData {
-    id: String,
-    r#type: String,
-    pub attributes: TransactionAttributes,
-}
-
-#[derive(Deserialize)]
-pub struct TransactionResponse {
-    pub data: Vec<TransactionData>, // links: TransactionLinks
+    Ok(request_data)
 }
