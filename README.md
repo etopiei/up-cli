@@ -31,6 +31,7 @@ Up Banking CLI Help
     Commands:
      - balance (prints all account balances)
      - transactions (show last 10 transactions)
+     - tally_income (counts all transactions related to income)
      - exit (quits the app)
 ⚡ exit
 ```

@@ -67,6 +67,10 @@ async fn repl(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
             .expect("Failed to read command");
         let args: Vec<&str> = command.trim().split_whitespace().collect();
 
+        if (args.len() == 0) {
+            continue;
+        }
+
         // Step 3: Evaluate
         match args[0] {
             "exit" | "quit" => break,
