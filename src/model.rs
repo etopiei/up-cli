@@ -35,7 +35,7 @@ pub struct AccountAttributes {
 #[derive(Deserialize)]
 #[allow(dead_code)]
 pub struct AccountData {
-    id: String,
+    pub id: String,
     r#type: String,
     pub attributes: AccountAttributes,
 }
@@ -81,4 +81,37 @@ pub struct TransactionData {
 pub struct TransactionResponse {
     pub data: Vec<TransactionData>, // links: TransactionLinks
     pub links: TransactionLinks,
+}
+
+// Category models
+#[derive(Deserialize)]
+pub struct CategoryAttributes {
+    pub name: String,
+}
+
+#[derive(Deserialize)]
+pub struct CategoryParentData {
+    pub id: String,
+}
+
+#[derive(Deserialize)]
+pub struct CategoryParent {
+    pub data: Option<CategoryParentData>,
+}
+
+#[derive(Deserialize)]
+pub struct CategoryRelationships {
+    pub parent: CategoryParent,
+}
+
+#[derive(Deserialize)]
+pub struct CategoryData {
+    pub id: String,
+    pub attributes: CategoryAttributes,
+    pub relationships: CategoryRelationships,
+}
+
+#[derive(Deserialize)]
+pub struct CategoryResponse {
+    pub data: Vec<CategoryData>,
 }
