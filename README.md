@@ -36,5 +36,10 @@ Up Banking CLI Help
 ⚡ exit
 ```
 
-More features coming soon, feel free to help out with a PR!
+To run a single command, pass the command as an argument. e.g.
 
+```
+$ up-cli balance
+```
+
+More features coming soon, feel free to help out with a PR!

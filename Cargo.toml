@@ -1,6 +1,6 @@
 [package]
 name = "up-cli"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["etopiei"]
 edition = "2018"
 license = "GPL-3.0-only"
@@ -14,4 +14,3 @@ tokio = { version = "1.28.1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 itertools = "0.10.5"
 colored = "2"
-

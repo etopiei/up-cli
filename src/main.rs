@@ -27,8 +27,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let req = client.request(Method::GET, &path);
             let resp: PingResponse = req.send().await?.json().await?;
             if resp.meta.status_emoji.trim() == "⚡️" {
-                println!("✅ Logged In Successfully");
-                repl(&client).await?;
+                // Here decide if we need to go to repl or not.
+                // i.e. is there a command to execute as an arg.
+                let args_owned: Vec<String> = env::args().collect();
+                let args: Vec<&str> = args_owned.iter().map(String::as_str).collect();
+                if args.len() == 1 {
+                    println!("✅ Logged In Successfully");
+                    repl(&client).await?;
+                } else {
+                    eval((&args[1..]).to_vec(), &client).await?;
+                }
             } else {
                 println!("API not connected");
             }
@@ -54,52 +62,58 @@ fn print_transaction(transaction: &model::TransactionData) {
     );
 }
 
+async fn eval(args: Vec<&str>, client: &Client) -> Result<(), Box<dyn std::error::Error>> {
+    if args.len() == 0 {
+        return Ok(());
+    }
+
+    // Step 3: Evaluate
+    match args[0] {
+        "balance" | "accounts" => {
+            for acc in get_accounts(&client).await? {
+                println!(
+                    "{}: ${}",
+                    acc.attributes.display_name, acc.attributes.balance.value
+                );
+            }
+        }
+        "transactions" => {
+            let mut size: u8 = 10;
+            if args.len() >= 2 {
+                size = args[1].parse::<u8>().unwrap();
+            }
+            for transaction in get_transactions(&client, size).await? {
+                print_transaction(&transaction);
+            }
+        }
+        "tally_income" => {
+            let tally = tally_income(&client).await?;
+
+            for (raw_text, amount) in tally {
+                println!("{}: ${}", raw_text, amount);
+            }
+        }
+        _ => print_help(),
+    }
+
+    Ok(())
+}
+
 async fn repl(client: &Client) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        // Step 1: Prompt
         print!("⚡ ");
         stdout().flush()?;
 
-        // Step 2: Read
         let mut command = String::new();
         stdin()
             .read_line(&mut command)
             .expect("Failed to read command");
         let args: Vec<&str> = command.trim().split_whitespace().collect();
-
-        if (args.len() == 0) {
-            continue;
-        }
-
-        // Step 3: Evaluate
         match args[0] {
             "exit" | "quit" => break,
-            "balance" | "accounts" => {
-                for acc in get_accounts(&client).await? {
-                    println!(
-                        "{}: ${}",
-                        acc.attributes.display_name, acc.attributes.balance.value
-                    );
-                }
-            }
-            "transactions" => {
-                let mut size: u8 = 10;
-                if args.len() >= 2 {
-                    size = args[1].parse::<u8>().unwrap();
-                }
-                for transaction in get_transactions(&client, size).await? {
-                    print_transaction(&transaction);
-                }
-            }
-            "tally_income" => {
-                let tally = tally_income(&client).await?;
-
-                for (raw_text, amount) in tally {
-                    println!("{}: ${}", raw_text, amount);
-                }
-            }
-            _ => print_help(),
+            _ => eval(args, client).await?,
         }
+
     }
     println!("Thanks for using Up Banking CLI - Have a nice day!");
     Ok(())
