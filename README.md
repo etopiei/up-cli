@@ -30,7 +30,9 @@ $ up-cli
 Up Banking CLI Help
     Commands:
      - balance (prints all account balances)
-     - transactions (show last 10 transactions)
+     - transactions [COUNT] [OPTIONS]
+        -c, --category CAT             (filter by category ID)
+        -a, --account NAME             (filter by account name or ID)
      - tally_income (counts all transactions related to income)
      - exit (quits the app)
 ⚡ exit
